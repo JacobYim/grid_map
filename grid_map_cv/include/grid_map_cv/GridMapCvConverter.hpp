@@ -100,23 +100,22 @@ class GridMapCvConverter
     grid_map::Matrix& data = gridMap[layer];
 
     for (GridMapIterator iterator(gridMap); !iterator.isPastEnd(); ++iterator) {
-      const grid_map::Index gridMapIndex = *iterator;
-      const grid_map::Index imageIndex = iterator.getUnwrappedIndex();
+      const Index index(*iterator);
 
       // Check for alpha layer.
       if (hasAlpha) {
-        const Type_ alpha = image.at<cv::Vec<Type_, NChannels_>>(imageIndex(0), imageIndex(1))[NChannels_ - 1];
+        const Type_ alpha = image.at<cv::Vec<Type_, NChannels_>>(index(0), index(1))[NChannels_ - 1];
         if (alpha < alphaTreshold) continue;
       }
 
       // Compute value.
-      const Type_ imageValue = imageMono.at<Type_>(imageIndex(0), imageIndex(1));
+      const Type_ imageValue = imageMono.at<Type_>(index(0), index(1));
       const float mapValue = lowerValue + mapValueDifference * ((float) imageValue / maxImageValue);
-      data(gridMapIndex(0), gridMapIndex(1)) = mapValue;
+      data(index(0), index(1)) = mapValue;
     }
 
     return true;
-  }
+  };
 
   /*!
    * Adds a color layer with data from an image.
@@ -177,7 +176,7 @@ class GridMapCvConverter
     const float minValue = gridMap.get(layer).minCoeffOfFinites();
     const float maxValue = gridMap.get(layer).maxCoeffOfFinites();
     return toImage<Type_, NChannels_>(gridMap, layer, encoding, minValue, maxValue, image);
-  }
+  };
 
   /*!
    * Creates a cv mat from a grid map layer.
@@ -226,9 +225,9 @@ class GridMapCvConverter
 
     for (GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
       const Index index(*iterator);
-      const float& value = data(index(0), index(1));
-      if (std::isfinite(value)) {
-        const Type_ imageValue = (Type_)(((value - lowerValue) / (upperValue - lowerValue)) * (float)imageMax);
+      if (std::isfinite(data(index(0), index(1)))) {
+        const float& value = data(index(0), index(1));
+        const Type_ imageValue = (Type_) (((value - lowerValue) / (upperValue - lowerValue)) * (float) imageMax);
         const Index imageIndex(iterator.getUnwrappedIndex());
         unsigned int channel = 0;
         image.at<cv::Vec<Type_, NChannels_>>(imageIndex(0), imageIndex(1))[channel] = imageValue;
@@ -244,7 +243,7 @@ class GridMapCvConverter
     }
 
     return true;
-  }
+  };
 
 };
 

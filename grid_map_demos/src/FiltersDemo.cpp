@@ -63,7 +63,6 @@ void FiltersDemo::callback(const grid_map_msgs::GridMap& message)
     return;
   }
 
-  ROS_INFO("PUBLISH");
   // Publish filtered output grid map.
   grid_map_msgs::GridMap outputMessage;
   GridMapRosConverter::toMessage(outputMap, outputMessage);

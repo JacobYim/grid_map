@@ -57,21 +57,9 @@ inline Eigen::Matrix2i getBufferOrderToMapFrameTransformation()
   return -Eigen::Matrix2i::Identity();
 }
 
-inline Vector transformBufferOrderToMapFrame(const Index& index) {
-  return {-index[0], -index[1]};
-}
-
 inline Eigen::Matrix2i getMapFrameToBufferOrderTransformation()
 {
   return getBufferOrderToMapFrameTransformation().transpose();
-}
-
-inline Index transformMapFrameToBufferOrder(const Vector& vector) {
-  return {-vector[0], -vector[1]};
-}
-
-inline Index transformMapFrameToBufferOrder(const Eigen::Vector2i& vector) {
-  return {-vector[0], -vector[1]};
 }
 
 inline bool checkIfStartIndexAtDefaultPosition(const Index& bufferStartIndex)
@@ -86,7 +74,7 @@ inline Vector getIndexVectorFromIndex(
 {
   Index unwrappedIndex;
   unwrappedIndex = getIndexFromBufferIndex(index, bufferSize, bufferStartIndex);
-  return transformBufferOrderToMapFrame(unwrappedIndex);
+  return (getBufferOrderToMapFrameTransformation() * unwrappedIndex.matrix()).cast<double>();
 }
 
 inline Index getIndexFromIndexVector(
@@ -94,7 +82,7 @@ inline Index getIndexFromIndexVector(
     const Size& bufferSize,
     const Index& bufferStartIndex)
 {
-  Index index = transformMapFrameToBufferOrder(indexVector);
+  Index index = (getMapFrameToBufferOrderTransformation() * indexVector.cast<int>()).array();
   return getBufferIndexFromIndex(index, bufferSize, bufferStartIndex);
 }
 
@@ -138,7 +126,8 @@ bool getIndexFromPosition(Index& index,
   getVectorToOrigin(offset, mapLength);
   Vector indexVector = ((position - offset - mapPosition).array() / resolution).matrix();
   index = getIndexFromIndexVector(indexVector, bufferSize, bufferStartIndex);
-  return checkIfPositionWithinMap(position, mapLength, mapPosition) && checkIfIndexInRange(index, bufferSize);
+  if (!checkIfPositionWithinMap(position, mapLength, mapPosition)) return false;
+  return true;
 }
 
 bool checkIfPositionWithinMap(const Position& position,
@@ -176,7 +165,7 @@ bool getIndexShiftFromPositionShift(Index& indexShift,
     indexShiftVector[i] = static_cast<int>(indexShiftVectorTemp[i] + 0.5 * (indexShiftVectorTemp[i] > 0 ? 1 : -1));
   }
 
-  indexShift = transformMapFrameToBufferOrder(indexShiftVector);
+  indexShift = (getMapFrameToBufferOrderTransformation() * indexShiftVector).array();
   return true;
 }
 
@@ -184,7 +173,7 @@ bool getPositionShiftFromIndexShift(Vector& positionShift,
                                     const Index& indexShift,
                                     const double& resolution)
 {
-  positionShift = transformBufferOrderToMapFrame(indexShift) * resolution;
+  positionShift = (getBufferOrderToMapFrameTransformation() * indexShift.matrix()).cast<double>() * resolution;
   return true;
 }
 
@@ -217,25 +206,10 @@ void wrapIndexToRange(Index& index, const Size& bufferSize)
   }
 }
 
-void wrapIndexToRange(int& index, int bufferSize)
+void wrapIndexToRange(int& index, const int& bufferSize)
 {
-  // Try shortcuts before resorting to the expensive modulo operation.
-  if (index < bufferSize){
-    if(index >= 0){ // within the wanted range
-      return;
-    } else if(index >= -bufferSize){ // Index is below range, but not more than one span of the range.
-      index +=bufferSize;
-      return;
-    }else{ // Index is largely below range.
-      index = index % bufferSize;
-      index += bufferSize;
-    }
-  }else if(index < bufferSize*2){ // Index is above range, but not more than one span of the range.
-    index -= bufferSize;
-    return;
-  } else{ // Index is largely above range.
-    index = index % bufferSize;
-  }
+  if (index < 0) index += ((-index / bufferSize) + 1) * bufferSize;
+  index = index % bufferSize;
 }
 
 void boundPositionToRange(Position& position, const Length& mapLength, const Position& mapPosition)
@@ -282,16 +256,16 @@ bool getSubmapInformation(Index& submapTopLeftIndex,
                           const Index& bufferStartIndex)
 {
   // (Top left / bottom right corresponds to the position in the matrix, not the map frame)
-  const Eigen::Matrix2d halfTransform = 0.5 * getMapFrameToBufferOrderTransformation().cast<double>();
+  Eigen::Matrix2d transform = getMapFrameToBufferOrderTransformation().cast<double>();
 
   // Corners of submap.
-  Position topLeftPosition = requestedSubmapPosition - halfTransform * requestedSubmapLength.matrix();
+  Position topLeftPosition = requestedSubmapPosition - transform * 0.5 * requestedSubmapLength.matrix();
   boundPositionToRange(topLeftPosition, mapLength, mapPosition);
   if(!getIndexFromPosition(submapTopLeftIndex, topLeftPosition, mapLength, mapPosition, resolution, bufferSize, bufferStartIndex)) return false;
   Index topLeftIndex;
   topLeftIndex = getIndexFromBufferIndex(submapTopLeftIndex, bufferSize, bufferStartIndex);
 
-  Position bottomRightPosition = requestedSubmapPosition + halfTransform * requestedSubmapLength.matrix();
+  Position bottomRightPosition = requestedSubmapPosition + transform * 0.5 * requestedSubmapLength.matrix();
   boundPositionToRange(bottomRightPosition, mapLength, mapPosition);
   Index bottomRightIndex;
   if(!getIndexFromPosition(bottomRightIndex, bottomRightPosition, mapLength, mapPosition, resolution, bufferSize, bufferStartIndex)) return false;
@@ -300,7 +274,7 @@ bool getSubmapInformation(Index& submapTopLeftIndex,
   // Get the position of the top left corner of the generated submap.
   Position topLeftCorner;
   if(!getPositionFromIndex(topLeftCorner, submapTopLeftIndex, mapLength, mapPosition, resolution, bufferSize, bufferStartIndex)) return false;
-  topLeftCorner -= halfTransform * Position::Constant(resolution);
+  topLeftCorner -= transform * Position::Constant(0.5 * resolution);
 
   // Size of submap.
   submapBufferSize = bottomRightIndex - topLeftIndex + Index::Ones();
@@ -315,7 +289,9 @@ bool getSubmapInformation(Index& submapTopLeftIndex,
 
   // Get the index of the cell which corresponds the requested
   // position of the submap.
-  return getIndexFromPosition(requestedIndexInSubmap, requestedSubmapPosition, submapLength, submapPosition, resolution, submapBufferSize);
+  if(!getIndexFromPosition(requestedIndexInSubmap, requestedSubmapPosition, submapLength, submapPosition, resolution, submapBufferSize)) return false;
+
+  return true;
 }
 
 Size getSubmapSizeFromCornerIndeces(const Index& topLeftIndex, const Index& bottomRightIndex,
@@ -517,6 +493,21 @@ Index getIndexFromLinearIndex(const size_t linearIndex, const Size& bufferSize, 
   return Index((int)linearIndex / bufferSize(1), (int)linearIndex % bufferSize(1));
 }
 
+void getIndicesForRegion(const Index& regionIndex, const Size& regionSize,
+                         std::vector<Index> indices)
+{
+//  for (int i = line.index_; col < line.endIndex(); col++) {
+//    for (int i = 0; i < getSize()(0); i++) {
+//
+//    }
+//  }
+}
+
+void getIndicesForRegions(const std::vector<Index>& regionIndeces, const Size& regionSizes,
+                          std::vector<Index> indices)
+{
+}
+
 bool colorValueToVector(const unsigned long& colorValue, Eigen::Vector3i& colorVector)
 {
   colorVector(0) = (colorValue >> 16) & 0x0000ff;
@@ -549,9 +540,9 @@ bool colorVectorToValue(const Eigen::Vector3i& colorVector, unsigned long& color
 
 void colorVectorToValue(const Eigen::Vector3i& colorVector, float& colorValue)
 {
-  Color colors;
-  colors.longColor = (colorVector(0) << 16) + (colorVector(1) << 8) + colorVector(2);
-  colorValue = colors.floatColor;
+  unsigned long color = (colorVector(0) << 16) + (colorVector(1) << 8) + colorVector(2);
+  // cppcheck-suppress invalidPointerCast
+  colorValue = *reinterpret_cast<float*>(&color);
 }
 
 void colorVectorToValue(const Eigen::Vector3f& colorVector, float& colorValue)

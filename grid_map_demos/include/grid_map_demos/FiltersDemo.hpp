@@ -11,11 +11,7 @@
 
 #include <grid_map_ros/grid_map_ros.hpp>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wformat"
-#include <filters/filter_chain.hpp>
-#pragma GCC diagnostic pop
+#include <filters/filter_chain.h>
 #include <ros/ros.h>
 #include <string>
 

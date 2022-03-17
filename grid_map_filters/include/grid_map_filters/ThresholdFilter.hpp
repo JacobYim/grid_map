@@ -8,11 +8,10 @@
 
 #pragma once
 
+#include <filters/filter_base.h>
+
 #include <string>
 #include <vector>
-
-#include <filters/filter_base.hpp>
-#include <grid_map_core/GridMap.hpp>
 
 namespace grid_map {
 
@@ -20,7 +19,10 @@ namespace grid_map {
  * Threshold filter class to set values below/above a threshold to a
  * specified value.
  */
-class ThresholdFilter : public filters::FilterBase<GridMap> {
+template<typename T>
+class ThresholdFilter : public filters::FilterBase<T>
+{
+
  public:
   /*!
    * Constructor
@@ -43,14 +45,12 @@ class ThresholdFilter : public filters::FilterBase<GridMap> {
    * @param mapIn GridMap with the different layers to apply a threshold.
    * @param mapOut GridMap with the threshold applied to the layers.
    */
-  virtual bool update(const GridMap& mapIn, GridMap& mapOut);
+  virtual bool update(const T& mapIn, T& mapOut);
 
  private:
-  //! Layer the threshold will be evaluated.
-  std::string conditionLayer_;
 
   //! Layer the threshold should be applied to.
-  std::string outputLayer_;
+  std::string layer_;
 
   //! Lower Threshold
   double lowerThreshold_;
@@ -58,11 +58,11 @@ class ThresholdFilter : public filters::FilterBase<GridMap> {
   //! Upper Threshold
   double upperThreshold_;
 
-  //! Booleans to decide which threshold should be used.
-  bool useLowerThreshold_, useUpperThreshold_;
-
   //! If threshold triggered set to this value
   double setTo_;
+
+  //! Booleans to decide which threshold should be used.
+  bool useLowerThreshold_, useUpperThreshold_;
 };
 
-}  // namespace grid_map
+} /* namespace */

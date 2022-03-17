@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "grid_map_core/BufferRegion.hpp"
-#include "grid_map_core/SubmapGeometry.hpp"
 #include "grid_map_core/TypeDefs.hpp"
+#include "grid_map_core/SubmapGeometry.hpp"
+#include "grid_map_core/BufferRegion.hpp"
 
 // STL
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
 
 // Eigen
 #include <Eigen/Core>
@@ -37,7 +37,8 @@ class SubmapGeometry;
  * - "surface_normal_x", "surface_normal_y", "surface_normal_z"
  * etc.
  */
-class GridMap {
+class GridMap
+{
  public:
   // Type traits for use with template methods/classes using GridMap as a template parameter.
   typedef grid_map::DataType DataType;
@@ -65,7 +66,7 @@ class GridMap {
   /*!
    * Destructor.
    */
-  virtual ~GridMap() = default;
+  virtual ~GridMap();
 
   /*!
    * Set the geometry of the grid map. Clears all the data.
@@ -73,7 +74,8 @@ class GridMap {
    * @param resolution the cell size in [m/cell].
    * @param position the 2d position of the grid map in the grid map frame [m].
    */
-  void setGeometry(const Length& length, const double resolution, const Position& position = Position::Zero());
+  void setGeometry(const Length& length, const double resolution,
+                   const Position& position = Position::Zero());
 
   /*!
    * Set the geometry of the grid map from submap geometry information.
@@ -125,7 +127,7 @@ class GridMap {
    * @return grid map data as matrix.
    * @throw std::out_of_range if no map layer with name `layer` is present.
    */
-  const Matrix& operator[](const std::string& layer) const;
+  const Matrix& operator [](const std::string& layer) const;
 
   /*!
    * Returns the grid map data for a layer as non-const. Use this method
@@ -134,7 +136,7 @@ class GridMap {
    * @return grid map data.
    * @throw std::out_of_range if no map layer with name `layer` is present.
    */
-  Matrix& operator[](const std::string& layer);
+  Matrix& operator [](const std::string& layer);
 
   /*!
    * Removes a layer from the grid map.
@@ -281,7 +283,8 @@ class GridMap {
    * @param vector the vector with the values of the data type.
    * @return true if successful, false if no valid data available.
    */
-  bool getVector(const std::string& layerPrefix, const Index& index, Eigen::Vector3d& vector) const;
+  bool getVector(const std::string& layerPrefix, const Index& index,
+                 Eigen::Vector3d& vector) const;
 
   /*!
    * Gets a submap from the map. The requested submap is specified with the requested
@@ -306,7 +309,8 @@ class GridMap {
    * @param[out] isSuccess true if successful, false otherwise.
    * @return submap (is empty if success is false).
    */
-  GridMap getSubmap(const Position& position, const Length& length, Index& indexInSubmap, bool& isSuccess) const;
+  GridMap getSubmap(const Position& position, const Length& length, Index& indexInSubmap,
+                    bool& isSuccess) const;
 
   /*!
    * Apply isometric transformation (rotation + offset) to grid map and returns the transformed map.
@@ -321,33 +325,26 @@ class GridMap {
    * @return transformed map.
    * @throw std::out_of_range if no map layer with name `heightLayerName` is present.
    */
-  GridMap getTransformedMap(const Eigen::Isometry3d& transform, const std::string& heightLayerName, const std::string& newFrameId,
+  GridMap getTransformedMap(const Eigen::Isometry3d& transform, const std::string& heightLayerName,
+                            const std::string& newFrameId,
                             const double sampleRatio = 0.0) const;
 
-  /*!
-   * Set the position of the grid map.
-   * Note: This method does not change the data stored in the grid map and
-   * is complementary to the `move(...)` method. For a comparison between
-   * the `setPosition` and the `move` method, see the `move_demo_node.cpp`
-   * file of the `grid_map_demos` package.
-   * @param position the 2d position of the grid map in the grid map frame [m].
-   */
-  void setPosition(const Position& position);
+   /*!
+    * Set the position of the grid map.
+    * Note: This method does not change the data stored in the grid map and
+    * is complementary to the `move(...)` method. For a comparison between
+    * the `setPosition` and the `move` method, see the `move_demo_node.cpp`
+    * file of the `grid_map_demos` package.
+    * @param position the 2d position of the grid map in the grid map frame [m].
+    */
+   void setPosition(const Position& position);
 
   /*!
-   * Relocates the region captured by grid map w.r.t. to the static grid map frame. Use this to move the grid map boundaries
-   * without relocating the grid map data. Takes care of all the data handling, such that the grid map data is stationary in the grid map
-   * frame.
-   * - Data in the overlapping region before and after the position change remains stored.
-   * - Data that falls outside the map at its new position is discarded.
-   *  - Cells that cover previously unknown regions are emptied (set to nan).
-   *  The data storage is implemented as two-dimensional circular buffer to minimize computational effort.
-   *
-   *  Note: Due to the circular buffer structure, neighbouring indices might not fall close in the map frame.
-   *  This assumption only holds for indices obtained by getUnwrappedIndex().
-   *
-   *  Note: For a comparison between the `setPosition` and the `move` method, see the `move_demo_node.cpp` file of the `grid_map_demos` package.
-   *
+   * Move the grid map w.r.t. to the grid map frame. Use this to move the grid map
+   * boundaries without moving the grid map data. Takes care of all the data handling,
+   * such that the grid map data is stationary in the grid map frame.
+   * Note: For a comparison between the `setPosition` and the `move` method,
+   * see the `move_demo_node.cpp` file of the `grid_map_demos` package.
    * @param position the new location of the grid map in the map frame.
    * @param newRegions the regions of the newly covered / previously uncovered regions of the buffer.
    * @return true if map has been moved, false otherwise.
@@ -372,7 +369,8 @@ class GridMap {
    * @param layers the layers that are copied if not all layers are used.
    * @return true if successful.
    */
-  bool addDataFrom(const GridMap& other, bool extendMap, bool overwriteData, bool copyAllLayers,
+  bool addDataFrom(const GridMap& other, bool extendMap,
+                   bool overwriteData, bool copyAllLayers,
                    std::vector<std::string> layers = std::vector<std::string>());
 
   /*!
@@ -487,12 +485,6 @@ class GridMap {
   Position getClosestPositionInMap(const Position& position) const;
 
  private:
-  /**
-   * Defines data validation check
-   * @param value
-   * @return true if value is valid
-   */
-  bool isValid(DataType value) const;
 
   /*!
    * Clear a number of columns of the grid map.
@@ -516,32 +508,6 @@ class GridMap {
    * @return true if linear interpolation was successful.
    */
   bool atPositionLinearInterpolated(const std::string& layer, const Position& position, float& value) const;
-
-  /*!
-   * Get cell data at requested position, cubic convolution
-   * interpolated from 4x4 cells. At the edge of the map,
-   * the algorithm assumes that height continues with the slope 0.
-   * I.e. the border cells just repeat outside of the map
-   * Taken from: https://en.wikipedia.org/wiki/Bicubic_interpolation
-   * @param[in] layer the name of the layer to be accessed.
-   * @param[in] position the requested position.
-   * @param[out] value the data of the cell.
-   * @return true if bicubic convolution interpolation was successful.
-   */
-  bool atPositionBicubicConvolutionInterpolated(const std::string& layer, const Position& position, float& value) const;
-
-  /*!
-   * Get cell data at requested position, cubic interpolated
-   * on a square. At the edge of the map,
-   * the algorithm assumes that height continues with the slope 0.
-   * I.e. the border cells just repeat outside of the map
-   * Taken from: https://en.wikipedia.org/wiki/Bicubic_interpolation
-   * @param[in] layer the name of the layer to be accessed.
-   * @param[in] position the requested position.
-   * @param[out] value the data of the cell.
-   * @return true if bicubic interpolation was successful.
-   */
-  bool atPositionBicubicInterpolated(const std::string& layer, const Position& position, float& value) const;
 
   /*!
    * Resize the buffer.
@@ -585,4 +551,4 @@ class GridMap {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-}  // namespace grid_map
+} /* namespace */
