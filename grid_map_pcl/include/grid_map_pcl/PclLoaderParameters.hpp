@@ -44,7 +44,7 @@ class PclLoaderParameters {
   };
 
   struct GridMapParameters {
-    double resolution_ = 0.1;
+    double resolution_ = 1.0;
     unsigned int minCloudPointsPerCell_ = 2;
     unsigned int maxCloudPointsPerCell_ = 100000;
   };

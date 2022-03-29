@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5.1)
 project(grid_map_pcl)
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+
 add_compile_options(-Wall -Wextra -Wpedantic)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -20,6 +22,30 @@ set(CATKIN_PACKAGE_DEPENDENCIES
   grid_map_ros
   pcl_ros
   roscpp
+)
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  grid_map_core
+  grid_map_ros
+  grid_map_cv
+  grid_map_filters
+  grid_map_loader
+  grid_map_msgs
+  grid_map_octomap
+  grid_map_rviz_plugin
+  grid_map_visualization
+  geometry_msgs
+  sensor_msgs
+  cv_bridge
+  octomap_msgs
+  filters
+)
+
+find_package(OpenCV REQUIRED
+  COMPONENTS
+  opencv_highgui
+  CONFIG
 )
 
 find_package(OpenMP QUIET)
