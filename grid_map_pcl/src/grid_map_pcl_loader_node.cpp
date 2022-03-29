@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
   // Convert to CV image.
   cv::Mat originalImage;
-  grid_map::GridMapCvConverter::toImage<unsigned short, 4>(gridMap, "elevation", CV_16UC1, 0.0, 0.3, originalImage);
+  grid_map::GridMapCvConverter::toImage<unsigned short, 1>(gridMap, "elevation", CV_16UC1, 0.0, 0.3, originalImage);
 
   // // Create OpenCV window.
   imwrite("/home/junghwanyim/test.jpg", originalImage);
