@@ -20,10 +20,13 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <boost/filesystem.hpp>
+using namespace boost::system;
+namespace fs = boost::filesystem;
+
 using namespace ros;
 namespace gm = ::grid_map::grid_map_pcl;
 using namespace grid_map;
-// using namespace cv;
 
 int main(int argc, char** argv) {
   printf("======================================= This is Printf part =========================================\n");
@@ -43,27 +46,36 @@ int main(int argc, char** argv) {
 
   // load pcl and parameter file
   grid_map::GridMapPclLoader gridMapPclLoader;
-  const std::string pathToCloud = gm::getPcdFilePath(nh);
   gridMapPclLoader.loadParameters(gm::getParameterPath(nh));
-  gridMapPclLoader.loadCloudFromPcdFile(pathToCloud);
-
-  printf("pathToCloud %s\n", gm::getPcdFilePath(nh).c_str());
-  printf("pathToParameter %s\n", gm::getParameterPath(nh).c_str());
-
-  // read pcl and process 
-  gm::processPointcloud(&gridMapPclLoader, nh);
-  grid_map::GridMap gridMap = gridMapPclLoader.getGridMap();
-  gridMap.setFrameId(gm::getMapFrame(nh));
-
-  // save gridmap as rosbag file
-  gm::saveGridMap(gridMap, nh, gm::getMapRosbagTopic(nh));
-
-  // Convert to CV image.
+  
+  std::string pathToCloud;
+  grid_map::GridMap gridMap;
   cv::Mat originalImage;
-  grid_map::GridMapCvConverter::toImage<unsigned short, 1>(gridMap, "elevation", CV_16UC1, 0.0, 0.3, originalImage);
+  std::string destination_path = "/home/junghwanyim/";
+  std::string sorce_path = "/home/junghwanyim/catkin_ws/src/grid_map/grid_map_pcl/data/";
+  // pathToCloud = sorce_path+"0000000103.pcd";
+  for (const auto & entry : fs::directory_iterator(sorce_path)){
+    std::cout << entry.path() << std::endl;
+    pathToCloud = entry.path().c_str();
+    gridMapPclLoader.loadCloudFromPcdFile(pathToCloud);
 
-  // // Create OpenCV window.
-  imwrite("/home/junghwanyim/test.jpg", originalImage);
+    // read pcl and process 
+    gm::processPointcloud(&gridMapPclLoader, nh);
+    gridMap = gridMapPclLoader.getGridMap();
+    gridMap.setFrameId(gm::getMapFrame(nh));
+
+    // save gridmap as rosbag file
+    gm::saveGridMap(gridMap, nh, gm::getMapRosbagTopic(nh));
+
+    // convert to CV image.    
+    grid_map::GridMapCvConverter::toImage<unsigned short, 1>(gridMap, "elevation", CV_16UC1, 0.0, 0.3, originalImage);
+
+    // save image
+    std::string token = pathToCloud.substr(pathToCloud.find_last_of("/\\") + 1).c_str();
+    
+    imwrite(destination_path+token+".jpg", originalImage);
+  }
+
 
   // publish grid map
   grid_map_msgs::GridMap msg;
