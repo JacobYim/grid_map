@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     gm::saveGridMap(gridMap, nh, gm::getMapRosbagTopic(nh));
 
     // convert to CV image.    
-    grid_map::GridMapCvConverter::toImage<unsigned short, 1>(gridMap, "elevation", CV_16UC1, 0.0, 0.3, originalImage);
+    grid_map::GridMapCvConverter::toImage<unsigned short, 1>(gridMap, "elevation", CV_16UC1, 0.0, 100.0, originalImage);
 
     // save image
     std::string token = pathToCloud.substr(pathToCloud.find_last_of("/\\") + 1).c_str();
